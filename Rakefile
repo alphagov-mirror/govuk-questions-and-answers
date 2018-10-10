@@ -48,5 +48,27 @@ task :generate do
     }
   end
 
+  orgs = JSON.parse(HTTP.get("https://www.gov.uk/api/search.json?filter_format=organisation&count=1000"))["results"]
+
+  orgs.each do |org|
+    details = JSON.parse(HTTP.get("https://www.gov.uk/api/content#{org["link"]}"))["details"]
+    puts org["title"]
+
+    details["social_media_links"].to_a.each do |link|
+      case link["service_type"]
+      when "twitter", "facebook", "youtube", "linkedin", "instagram"
+        questions << {
+          q: "What is the #{link["service_type"]} account for #{org["title"]}?",
+          a: "The #{link["service_type"]} account for #{org["title"]} is #{link["href"]}",
+        }
+      when "blog"
+        questions << {
+          q: "What is the #{link["service_type"]} for #{org["title"]}?",
+          a: "The blog for #{org["title"]} is #{link["href"]}",
+        }
+      end
+    end
+  end
+
   File.write("questions-and-answers.md", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
 end
