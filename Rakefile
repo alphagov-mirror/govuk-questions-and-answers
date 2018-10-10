@@ -36,9 +36,15 @@ task :generate do
   ministers = JSON.parse(HTTP.get("https://www.gov.uk/api/search.json?filter_format=minister&count=1000"))["results"]
 
   ministers.each do |minister|
+    person = minister["description"].to_s.gsub('Current role holder:', '').strip
+    if person.blank?
+      puts "Could not find the person for #{minister["title"]}"
+      next
+    end
+
     questions << {
-      q: "Who is #{minister["title"]}",
-      a: minister["description"].to_s.gsub('Current role holder:', '').strip,
+      q: "Who is #{minister["title"]}?",
+      a: "The #{minister["title"]} is #{person}",
     }
   end
 
