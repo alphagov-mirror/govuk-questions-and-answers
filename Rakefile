@@ -3,9 +3,8 @@ require 'json'
 require 'active_support'
 require 'active_support/core_ext'
 
-task :generate do
+task :dates do
   questions = []
-
   events = JSON.parse(HTTP.get("https://www.gov.uk/bank-holidays.json"))["england-and-wales"]["events"]
 
   events.each do |event|
@@ -33,6 +32,11 @@ task :generate do
     end
   end
 
+  File.write("questions-and-answers/dates.md", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
+end
+
+task :ministers do
+  questions = []
   ministers = JSON.parse(HTTP.get("https://www.gov.uk/api/search.json?filter_format=minister&count=1000"))["results"]
 
   ministers.each do |minister|
@@ -48,7 +52,15 @@ task :generate do
     }
   end
 
-  orgs = JSON.parse(HTTP.get("https://www.gov.uk/api/search.json?filter_format=organisation&count=1000"))["results"]
+  File.write("questions-and-answers/ministers.md", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
+end
+
+task :orgs do
+  questions = []
+
+  orgs = JSON.parse(HTTP.get(
+    "https://www.gov.uk/api/search.json?filter_format=organisation&count=50" # only 50 for development speed 
+  ))["results"]
 
   orgs.each do |org|
     details = JSON.parse(HTTP.get("https://www.gov.uk/api/content#{org["link"]}"))["details"]
@@ -70,5 +82,5 @@ task :generate do
     end
   end
 
-  File.write("questions-and-answers.md", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
+  File.write("questions-and-answers/orgs.md", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
 end
