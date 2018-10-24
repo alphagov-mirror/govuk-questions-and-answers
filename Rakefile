@@ -1,7 +1,32 @@
 require 'http'
 require 'json'
+require 'yaml'
 require 'active_support'
 require 'active_support/core_ext'
+
+task :steps do
+  questions = []
+  step_by_steps = JSON.parse(HTTP.get("https://www.gov.uk/api/search.json?filter_content_store_document_type=step_by_step_nav"))["results"]
+  step_by_steps.each do |s|
+    title = s["title"].gsub(": step by step", "").gsub("you've", "I've")
+
+    item =  JSON.parse(HTTP.get("https://www.gov.uk/api/content#{s["link"]}"))["details"]
+
+    a = "This is a #{item["step_by_step_nav"]["steps"].size} step process. The first thing to do is to #{item["step_by_step_nav"]["steps"][0]["title"]}. Search for '#{title}' on GOV.UK to continue."
+
+    questions << {
+      q: "How do I #{title}?",
+      a: a,
+    }
+  end
+
+  write("steps.md", questions)
+end
+
+def write(file, questions)
+  puts YAML.dump(questions)
+  File.write("questions-and-answers/#{file}", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
+end
 
 task :dates do
   questions = []
@@ -59,7 +84,7 @@ task :orgs do
   questions = []
 
   orgs = JSON.parse(HTTP.get(
-    "https://www.gov.uk/api/search.json?filter_format=organisation&count=50" # only 50 for development speed 
+    "https://www.gov.uk/api/search.json?filter_format=organisation&count=50" # only 50 for development speed
   ))["results"]
 
   orgs.each do |org|
