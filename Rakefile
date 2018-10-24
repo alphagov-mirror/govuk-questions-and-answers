@@ -23,9 +23,23 @@ task :steps do
   write("steps.md", questions)
 end
 
+task :clocks do
+  questions = []
+  changes = JSON.parse(HTTP.get("https://www.gov.uk/when-do-the-clocks-change.json"))["united-kingdom"]["events"]
+
+  next_change = changes.sort_by { |change| Date.parse(change["date"]) }.select { |change| Date.parse(change["date"]) > Date.today }.first
+
+  questions << {
+    q: "When do the clocks change?",
+    a: "The #{next_change["notes"]} on #{Date.parse(next_change["date"]).to_formatted_s(:long)}",
+  }
+
+  write("clocks.md", questions)
+end
+
 def write(file, questions)
   puts YAML.dump(questions)
-  File.write("questions-and-answers/#{file}", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n"))
+  File.write("questions-and-answers/#{file}", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n") + "\n")
 end
 
 task :dates do
