@@ -37,6 +37,20 @@ task :clocks do
   write("clocks.md", questions)
 end
 
+task :cma do
+  questions = []
+  cma_cases = JSON.parse(HTTP.get("https://www.gov.uk/api/search.json?filter_content_store_document_type=cma_case&fields[]=title,case_state&count=1000"))["results"]
+
+  cma_cases.each do |cma_case|
+    questions << {
+      q: "What's the status of the #{cma_case["title"]} CMA case?",
+      a: "It is #{cma_case["case_state"].first["label"]}",
+    }
+  end
+
+  write("cma.md", questions)
+end
+
 def write(file, questions)
   puts YAML.dump(questions)
   File.write("questions-and-answers/#{file}", questions.map { |qa| "## #{qa[:q]}\n#{qa[:a]}" }.join("\n\n") + "\n")
